@@ -1,14 +1,21 @@
 ---
-import ImageCompressor from '../components/ImageCompressor.tsx';
 import Layout from '../layouts/Layout.astro';
+import ImageCompressor from '../components/ImageCompressor.tsx';
 ---
 
-<Layout title="Compress Images - Image Tools">
-  <main class="p-4">
-    <h1 class="text-3xl font-bold mb-4">Compress Images</h1>
-    <p class="mb-4">
-      Reduce image size right in your browser. Fast, private, no upload to server.
-    </p>
-    <ImageCompressor client:load />
-  </main>
+<Layout title="Compress Images - Free Image Compression Tool">
+    <main class="flex-grow p-4">
+        <div class="max-w-4xl mx-auto py-8">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    Compress Images Online
+                </h1>
+                <p class="text-gray-600">
+                    Reduce image file size while maintaining quality. Free, fast, and secure.
+                </p>
+            </div>
+            
+            <ImageCompressor client:load />
+        </div>
+    </main>
 </Layout>
