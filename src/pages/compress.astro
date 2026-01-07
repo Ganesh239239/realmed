@@ -1,0 +1,14 @@
+---
+import ImageCompressor from '../components/ImageCompressor.tsx';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Compress Images - Image Tools">
+  <main class="p-4">
+    <h1 class="text-3xl font-bold mb-4">Compress Images</h1>
+    <p class="mb-4">
+      Reduce image size right in your browser. Fast, private, no upload to server.
+    </p>
+    <ImageCompressor client:load />
+  </main>
+</Layout>
