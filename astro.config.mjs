@@ -1,9 +1,10 @@
+// astro.config.mjs
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   integrations: [react(), tailwind()],
-  // optional: default is 'static'
-  output: 'static',
+  // For Cloudflare Pages static build:
+  output: 'static', 
 });
