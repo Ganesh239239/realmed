@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free online image compressor. Reduce image file size without losing quality. Fast, secure, no upload limits.">
+    <meta name="keywords" content="image compressor, compress images online, reduce image size, image optimization">
+    <title>Free Image Compressor - Compress Images Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen">
+    <div class="container mx-auto px-6 py-12 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gray-800 mb-3">Free Image Compressor</h1>
+            <p class="text-lg text-gray-600">Compress images without losing quality • 100% free • No signup required</p>
+        </header>
+
+        <!-- Upload Area -->
+        <div id="uploadArea" class="relative border-2 border-dashed border-gray-300 bg-white rounded-2xl p-16 mb-8 transition-all hover:border-blue-400 cursor-pointer">
+            <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+            <div class="text-center">
+                <svg class="w-20 h-20 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-2xl font-semibold text-gray-700 mb-2">Drop images here or click to upload</p>
+                <p class="text-gray-500">Supports JPG, PNG, WebP • No file size limits</p>
+            </div>
+        </div>
+
+        <!-- Quality Slider -->
+        <div id="qualityControl" class="bg-white rounded-xl p-6 mb-8 shadow-sm hidden">
+            <div class="flex items-center gap-4 mb-4">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                </svg>
+                <h3 class="font-semibold text-gray-800 text-lg">Compression Quality</h3>
+            </div>
+            <div class="flex items-center gap-4">
+                <input type="range" id="qualitySlider" min="10" max="100" value="80" class="flex-1 h-2 bg-gray-200 rounded-lg cursor-pointer">
+                <span id="qualityValue" class="text-xl font-bold text-blue-600 w-16">80%</span>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div id="summary" class="bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-6 mb-8 text-white shadow-lg hidden">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                    <p class="text-blue-100 text-sm mb-1">Total Savings</p>
+                    <p id="totalSavings" class="text-4xl font-bold">0%</p>
+                </div>
+                <div class="text-right">
+                    <p id="sizeComparison" class="text-blue-100 text-sm mb-1">0 KB → 0 KB</p>
+                    <p id="savedAmount" class="text-sm">Saved 0 KB</p>
+                </div>
+                <button id="downloadAllBtn" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download All
+                </button>
+            </div>
+        </div>
+
+        <!-- Images Grid -->
+        <div id="imagesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center text-gray-400 py-16">
+            <svg class="w-20 h-20 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p class="text-xl">No images uploaded yet</p>
+        </div>
+
+        <!-- Footer SEO Content -->
+        <footer class="mt-16 pt-8 border-t border-gray-200">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">How to Compress Images Online</h2>
+                <p class="text-gray-600 mb-4">Our free image compressor reduces file sizes while maintaining visual quality. Simply upload your images, adjust the compression quality slider, and download your optimized files. Perfect for websites, social media, and email attachments.</p>
+                <div class="grid md:grid-cols-3 gap-6 mt-8">
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">🚀 Fast & Free</h3>
+                        <p class="text-sm text-gray-600">Compress unlimited images with no signup required</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">🔒 100% Secure</h3>
+                        <p class="text-sm text-gray-600">All processing happens in your browser. Files never uploaded to servers</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-800 mb-2">⚡ Instant Results</h3>
+                        <p class="text-sm text-gray-600">See compression results in real-time with adjustable quality</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let images = [];
+        let quality = 80;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const qualityControl = document.getElementById('qualityControl');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+        const summary = document.getElementById('summary');
+        const imagesGrid = document.getElementById('imagesGrid');
+        const emptyState = document.getElementById('emptyState');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-blue-500', 'bg-blue-50');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-blue-500', 'bg-blue-50');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Quality slider
+        qualitySlider.addEventListener('input', (e) => {
+            quality = parseInt(e.target.value);
+            qualityValue.textContent = quality + '%';
+            if (images.length > 0) {
+                recompressAll();
+            }
+        });
+
+        // Download all
+        downloadAllBtn.addEventListener('click', downloadAll);
+
+        async function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            
+            for (const file of imageFiles) {
+                const compressed = await compressImage(file, quality);
+                images.push(compressed);
+            }
+            
+            updateUI();
+        }
+
+        function compressImage(file, quality) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        canvas.toBlob((blob) => {
+                            resolve({
+                                id: Math.random().toString(36).substr(2, 9),
+                                originalFile: file,
+                                originalSize: file.size,
+                                originalUrl: e.target.result,
+                                compressedBlob: blob,
+                                compressedSize: blob.size,
+                                compressedUrl: URL.createObjectURL(blob),
+                                name: file.name,
+                            });
+                        }, 'image/jpeg', quality / 100);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function recompressAll() {
+            const recompressed = [];
+            for (const img of images) {
+                const compressed = await compressImage(img.originalFile, quality);
+                recompressed.push(compressed);
+            }
+            images = recompressed;
+            updateUI();
+        }
+
+        function updateUI() {
+            if (images.length === 0) {
+                qualityControl.classList.add('hidden');
+                summary.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                imagesGrid.innerHTML = '';
+                return;
+            }
+
+            qualityControl.classList.remove('hidden');
+            summary.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            // Update summary
+            const totalOriginal = images.reduce((sum, img) => sum + img.originalSize, 0);
+            const totalCompressed = images.reduce((sum, img) => sum + img.compressedSize, 0);
+            const savingsPercent = Math.round((1 - totalCompressed / totalOriginal) * 100);
+            
+            document.getElementById('totalSavings').textContent = savingsPercent + '%';
+            document.getElementById('sizeComparison').textContent = 
+                `${formatSize(totalOriginal)} → ${formatSize(totalCompressed)}`;
+            document.getElementById('savedAmount').textContent = 
+                `Saved ${formatSize(totalOriginal - totalCompressed)}`;
+
+            // Render images
+            imagesGrid.innerHTML = images.map(img => `
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="relative">
+                        <img src="${img.compressedUrl}" alt="${img.name}" class="w-full h-48 object-cover">
+                        <button onclick="removeImage('${img.id}')" class="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <p class="font-semibold text-gray-800 mb-3 truncate">${img.name}</p>
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                            <div>
+                                <p class="text-gray-500">Original</p>
+                                <p class="font-semibold text-gray-800">${formatSize(img.originalSize)}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500">Compressed</p>
+                                <p class="font-semibold text-green-600">${formatSize(img.compressedSize)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                                ${Math.round((1 - img.compressedSize / img.originalSize) * 100)}% smaller
+                            </div>
+                            <button onclick="downloadImage('${img.id}')" class="text-blue-600 hover:text-blue-700 font-semibold text-sm flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function removeImage(id) {
+            images = images.filter(img => img.id !== id);
+            updateUI();
+        }
+
+        function downloadImage(id) {
+            const img = images.find(i => i.id === id);
+            if (!img) return;
+            const link = document.createElement('a');
+            link.href = img.compressedUrl;
+            link.download = `compressed_${img.name}`;
+            link.click();
+        }
+
+        function downloadAll() {
+            images.forEach(img => {
+                const link = document.createElement('a');
+                link.href = img.compressedUrl;
+                link.download = `compressed_${img.name}`;
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
