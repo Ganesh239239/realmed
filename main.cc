@@ -1,14 +1,17 @@
 #include <drogon/drogon.h>
+#include <json/json.h>
 
 using namespace drogon;
 
 int main() {
     app().registerHandler(
         "/health",
-        [](const HttpRequestPtr&, std::function<void(const HttpResponsePtr&)>&& cb) {
-            auto resp = HttpResponse::newHttpJsonResponse(
-                Json::Value("ok")
-            );
+        [](const HttpRequestPtr&,
+           std::function<void(const HttpResponsePtr&)>&& cb) {
+            Json::Value response;
+            response["status"] = "ok";
+
+            auto resp = HttpResponse::newHttpJsonResponse(response);
             cb(resp);
         },
         {Get}
