@@ -4,20 +4,21 @@
 using namespace drogon;
 
 int main() {
-    app().registerHandler(
+    auto& app = drogon::app();
+
+    app.registerHandler(
         "/health",
         [](const HttpRequestPtr&,
-           std::function<void(const HttpResponsePtr&)>&& cb) {
-            Json::Value response;
-            response["status"] = "ok";
+           std::function<void(const HttpResponsePtr&)>&& callback) {
+            Json::Value json;
+            json["status"] = "ok";
 
-            auto resp = HttpResponse::newHttpJsonResponse(response);
-            cb(resp);
+            auto resp = HttpResponse::newHttpJsonResponse(json);
+            callback(resp);
         },
         {Get}
     );
 
-    app()
-        .addListener("0.0.0.0", 8080)
-        .run();
+    app.addListener("0.0.0.0", 8080);
+    app.run();
 }
