@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -17,19 +17,17 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Build Drogon WITH HTTP upload support enabled
+# Build Drogon (with submodules)
 RUN git clone --recurse-submodules https://github.com/drogonframework/drogon.git /tmp/drogon && \
     cd /tmp/drogon && \
     mkdir build && cd build && \
-    cmake .. \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DDROGON_ENABLE_HTTP_UPLOAD=ON && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
     rm -rf /tmp/drogon
 
-# Build your application
+# Build application
 WORKDIR /app
 COPY . .
 
