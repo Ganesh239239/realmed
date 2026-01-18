@@ -22,7 +22,7 @@ int main() {
         {Get}
     );
 
-    // Upload endpoint (VERSION-SAFE)
+    // Upload endpoint (LOW-LEVEL, VERSION-SAFE)
     app.registerHandler(
         "/upload",
         [](const HttpRequestPtr& req,
@@ -36,23 +36,21 @@ int main() {
                 return;
             }
 
-            const auto& filesMap = req->getFilesMap();
+            MultiPartParser parser;
+            if (parser.parse(req) != 0) {
+                response["error"] = "Failed to parse multipart body";
+                cb(HttpResponse::newHttpJsonResponse(response));
+                return;
+            }
 
-            if (filesMap.empty()) {
+            const auto& files = parser.getFiles();
+            if (files.empty()) {
                 response["error"] = "No file uploaded";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            // Take first uploaded file (field name does not matter)
-            const auto& firstEntry = filesMap.begin()->second;
-            if (firstEntry.empty()) {
-                response["error"] = "Empty file upload";
-                cb(HttpResponse::newHttpJsonResponse(response));
-                return;
-            }
-
-            const auto& file = firstEntry[0];
+            const auto& file = files[0];
 
             if (file.fileLength() > MAX_FILE_SIZE) {
                 response["error"] = "File too large (max 10MB)";
