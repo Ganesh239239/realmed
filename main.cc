@@ -3,12 +3,35 @@
 #include <filesystem>
 #include <cstdlib>
 #include <chrono>
+#include <unordered_set>
 
 using namespace drogon;
 namespace fs = std::filesystem;
 
+/* ---------------- CONFIG ---------------- */
 static const size_t MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 static const int MAX_FILE_AGE_SECONDS = 15 * 60;     // 15 minutes
+
+static const std::unordered_set<std::string> VALID_API_KEYS = {
+    "test_api_key_123",
+    "prod_api_key_abc"
+};
+
+/* -------- API KEY CHECK -------- */
+bool checkApiKey(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>& cb) {
+    auto key = req->getHeader("X-API-Key");
+
+    if (key.empty() || VALID_API_KEYS.find(key) == VALID_API_KEYS.end()) {
+        Json::Value err;
+        err["error"] = "Invalid or missing API key";
+        auto resp = HttpResponse::newHttpJsonResponse(err);
+        resp->setStatusCode(k401Unauthorized);
+        cb(resp);
+        return false;
+    }
+    return true;
+}
 
 /* -------- CLEANUP OLD FILES ON STARTUP -------- */
 void cleanupTmp() {
@@ -33,10 +56,9 @@ void cleanupTmp() {
 int main() {
     auto& app = drogon::app();
 
-    // Cleanup temporary files when service starts
     cleanupTmp();
 
-    /* ---------------- HEALTH ---------------- */
+    /* ---------------- HEALTH (PUBLIC) ---------------- */
     app.registerHandler(
         "/health",
         [](const HttpRequestPtr&,
@@ -48,11 +70,13 @@ int main() {
         {Get}
     );
 
-    /* ---------------- MERGE PDFs ---------------- */
+    /* ---------------- MERGE ---------------- */
     app.registerHandler(
         "/merge",
         [](const HttpRequestPtr& req,
            std::function<void(const HttpResponsePtr&)>&& cb) {
+
+            if (!checkApiKey(req, cb)) return;
 
             Json::Value response;
 
@@ -110,11 +134,13 @@ int main() {
         {Post}
     );
 
-    /* ---------------- SPLIT PDF ---------------- */
+    /* ---------------- SPLIT ---------------- */
     app.registerHandler(
         "/split",
         [](const HttpRequestPtr& req,
            std::function<void(const HttpResponsePtr&)>&& cb) {
+
+            if (!checkApiKey(req, cb)) return;
 
             Json::Value response;
 
@@ -177,9 +203,11 @@ int main() {
     /* ---------------- DOWNLOAD ---------------- */
     app.registerHandler(
         "/download/{id}",
-        [](const HttpRequestPtr&,
+        [](const HttpRequestPtr& req,
            std::function<void(const HttpResponsePtr&)>&& cb,
            std::string id) {
+
+            if (!checkApiKey(req, cb)) return;
 
             fs::path filePath = fs::path("/tmp") / (id + ".pdf");
 
