@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# 1. Install ALL required dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -11,18 +11,23 @@ RUN apt-get update && apt-get install -y \
     libjsoncpp-dev \
     libpodofo-dev \
     qpdf \
+    libboost-all-dev \
+    zlib1g-dev \
+    uuid-dev \
+    libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Build and install Drogon from source
-RUN git clone https://github.com/drogonframework/drogon.git /tmp/drogon && \
+# 2. Build Drogon from source (stable method)
+RUN git clone --depth=1 https://github.com/drogonframework/drogon.git /tmp/drogon && \
     cd /tmp/drogon && \
     mkdir build && cd build && \
-    cmake .. && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release && \
     make -j$(nproc) && \
     make install && \
     ldconfig && \
     rm -rf /tmp/drogon
 
+# 3. Build your application
 WORKDIR /app
 COPY . .
 
