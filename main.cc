@@ -1,7 +1,6 @@
 #include <drogon/drogon.h>
 #include <json/json.h>
 #include <filesystem>
-#include <fstream>
 #include <cstdlib>
 #include <chrono>
 
@@ -11,9 +10,10 @@ namespace fs = std::filesystem;
 static const size_t MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 static const int MAX_FILE_AGE_SECONDS = 15 * 60;     // 15 minutes
 
-/* -------- CLEANUP OLD FILES -------- */
+/* -------- CLEANUP OLD FILES ON STARTUP -------- */
 void cleanupTmp() {
-    auto now = std::chrono::system_clock::now();
+    using clock = fs::file_time_type::clock;
+    auto now = clock::now();
 
     for (const auto& entry : fs::directory_iterator("/tmp")) {
         if (!entry.is_regular_file()) continue;
@@ -33,7 +33,7 @@ void cleanupTmp() {
 int main() {
     auto& app = drogon::app();
 
-    // Cleanup on startup
+    // Cleanup temporary PDFs when service starts
     cleanupTmp();
 
     /* ---------------- HEALTH ---------------- */
@@ -64,14 +64,14 @@ int main() {
 
             MultiPartParser parser;
             if (parser.parse(req) != 0) {
-                response["error"] = "Failed to parse multipart body";
+                response["error"] = "Failed to parse multipart data";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
             const auto& files = parser.getFiles();
             if (files.size() < 2) {
-                response["error"] = "At least two PDFs required";
+                response["error"] = "At least two PDF files required";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
@@ -84,6 +84,7 @@ int main() {
                     cb(HttpResponse::newHttpJsonResponse(response));
                     return;
                 }
+
                 fs::path p = fs::path("/tmp") / (utils::getUuid() + ".pdf");
                 f.saveAs(p.string());
                 inputs.push_back(p.string());
@@ -93,7 +94,7 @@ int main() {
             fs::path outPath = fs::path("/tmp") / (outId + ".pdf");
 
             std::string cmd = "qpdf --empty \"" + outPath.string() + "\" --pages ";
-            for (auto& p : inputs) cmd += "\"" + p + "\" ";
+            for (const auto& p : inputs) cmd += "\"" + p + "\" ";
             cmd += "-- \"" + outPath.string() + "\"";
 
             if (std::system(cmd.c_str()) != 0) {
@@ -125,14 +126,14 @@ int main() {
 
             MultiPartParser parser;
             if (parser.parse(req) != 0) {
-                response["error"] = "Failed to parse multipart body";
+                response["error"] = "Failed to parse multipart data";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
             const auto& files = parser.getFiles();
             if (files.size() != 1) {
-                response["error"] = "Exactly one PDF required";
+                response["error"] = "Exactly one PDF file required";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
@@ -140,7 +141,7 @@ int main() {
             const auto& file = files[0];
             if (file.getFileExtension() != "pdf" ||
                 file.fileLength() > MAX_FILE_SIZE) {
-                response["error"] = "Invalid PDF";
+                response["error"] = "Invalid PDF file";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
@@ -148,12 +149,12 @@ int main() {
             fs::path inputPath = fs::path("/tmp") / (utils::getUuid() + ".pdf");
             file.saveAs(inputPath.string());
 
-            fs::path outputDir = fs::path("/tmp") / utils::getUuid();
-            fs::create_directory(outputDir);
+            fs::path outDir = fs::path("/tmp") / utils::getUuid();
+            fs::create_directory(outDir);
 
             std::string cmd =
                 "qpdf --split-pages \"" + inputPath.string() +
-                "\" \"" + (outputDir / "page-%d.pdf").string() + "\"";
+                "\" \"" + (outDir / "page-%d.pdf").string() + "\"";
 
             if (std::system(cmd.c_str()) != 0) {
                 response["error"] = "Split failed";
@@ -162,8 +163,8 @@ int main() {
             }
 
             Json::Value pages(Json::arrayValue);
-            for (const auto& entry : fs::directory_iterator(outputDir)) {
-                pages.append(entry.path().filename().string());
+            for (const auto& e : fs::directory_iterator(outDir)) {
+                pages.append(e.path().filename().string());
             }
 
             response["status"] = "success";
@@ -173,7 +174,7 @@ int main() {
         {Post}
     );
 
-    /* ---------------- DOWNLOAD + DELETE ---------------- */
+    /* ---------------- DOWNLOAD ---------------- */
     app.registerHandler(
         "/download/{id}",
         [](const HttpRequestPtr&,
@@ -193,12 +194,6 @@ int main() {
                 "Content-Disposition",
                 "attachment; filename=\"result.pdf\""
             );
-
-            // Delete file after response is sent
-            resp->setOnCloseCallback([filePath]() {
-                std::error_code ec;
-                fs::remove(filePath, ec);
-            });
 
             cb(resp);
         },
