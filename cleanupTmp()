@@ -1,0 +1,19 @@
+void cleanupTmp() {
+    using clock = fs::file_time_type::clock;
+    auto now = clock::now();
+
+    for (const auto& entry : fs::directory_iterator("/tmp")) {
+        if (!entry.is_regular_file()) continue;
+
+        auto ftime = fs::last_write_time(entry);
+
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(
+            now - ftime
+        ).count();
+
+        if (age > MAX_FILE_AGE_SECONDS) {
+            std::error_code ec;
+            fs::remove(entry.path(), ec);
+        }
+    }
+}
