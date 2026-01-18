@@ -10,7 +10,7 @@ static const size_t MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 int main() {
     auto& app = drogon::app();
 
-    // Health check
+    // Health endpoint
     app.registerHandler(
         "/health",
         [](const HttpRequestPtr&,
@@ -22,7 +22,7 @@ int main() {
         {Get}
     );
 
-    // File upload endpoint
+    // Upload endpoint
     app.registerHandler(
         "/upload",
         [](const HttpRequestPtr& req,
@@ -30,14 +30,15 @@ int main() {
 
             Json::Value response;
 
-            // Check content type
-            if (req->getContentType() != CT_MULTIPART_FORM_DATA) {
-                response["error"] = "Content-Type must be multipart/form-data";
+            if (req->getMethod() != Post ||
+                req->getContentType() != CT_MULTIPART_FORM_DATA) {
+                response["error"] = "multipart/form-data required";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            auto files = req->getFiles();
+            const auto& files = req->getUploadedFiles();
+
             if (files.empty()) {
                 response["error"] = "No file uploaded";
                 cb(HttpResponse::newHttpJsonResponse(response));
@@ -46,30 +47,25 @@ int main() {
 
             const auto& file = files[0];
 
-            // Validate size
             if (file.fileLength() > MAX_FILE_SIZE) {
                 response["error"] = "File too large (max 10MB)";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            // Validate extension
             if (file.getFileExtension() != "pdf") {
                 response["error"] = "Only PDF files allowed";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            // Create safe temp path
             std::string uuid = utils::getUuid();
             fs::path outputPath = fs::path("/tmp") / (uuid + ".pdf");
 
-            // Save file
             file.saveAs(outputPath.string());
 
             response["status"] = "success";
             response["file_id"] = uuid;
-            response["path"] = outputPath.string();
 
             cb(HttpResponse::newHttpJsonResponse(response));
         },
