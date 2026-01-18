@@ -33,7 +33,7 @@ void cleanupTmp() {
 int main() {
     auto& app = drogon::app();
 
-    // Cleanup temporary PDFs when service starts
+    // Cleanup temporary files when service starts
     cleanupTmp();
 
     /* ---------------- HEALTH ---------------- */
@@ -48,7 +48,7 @@ int main() {
         {Get}
     );
 
-    /* ---------------- MERGE ---------------- */
+    /* ---------------- MERGE PDFs ---------------- */
     app.registerHandler(
         "/merge",
         [](const HttpRequestPtr& req,
@@ -110,7 +110,7 @@ int main() {
         {Post}
     );
 
-    /* ---------------- SPLIT ---------------- */
+    /* ---------------- SPLIT PDF ---------------- */
     app.registerHandler(
         "/split",
         [](const HttpRequestPtr& req,
