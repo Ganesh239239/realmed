@@ -1,6 +1,7 @@
 #include <drogon/drogon.h>
 #include <json/json.h>
 #include <filesystem>
+#include <fstream>
 #include <cstdlib>
 
 using namespace drogon;
@@ -146,6 +147,33 @@ int main() {
             cb(HttpResponse::newHttpJsonResponse(response));
         },
         {Post}
+    );
+
+    /* ---------------- DOWNLOAD ---------------- */
+    app.registerHandler(
+        "/download/{id}",
+        [](const HttpRequestPtr& req,
+           std::function<void(const HttpResponsePtr&)>&& cb,
+           std::string id) {
+
+            fs::path filePath = fs::path("/tmp") / (id + ".pdf");
+
+            if (!fs::exists(filePath)) {
+                auto resp = HttpResponse::newNotFoundResponse();
+                cb(resp);
+                return;
+            }
+
+            auto resp = HttpResponse::newFileResponse(filePath.string());
+            resp->addHeader("Content-Type", "application/pdf");
+            resp->addHeader(
+                "Content-Disposition",
+                "attachment; filename=\"result.pdf\""
+            );
+
+            cb(resp);
+        },
+        {Get}
     );
 
     app.addListener("0.0.0.0", 8080);
