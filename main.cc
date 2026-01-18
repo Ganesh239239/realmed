@@ -3,14 +3,38 @@
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
+#include <chrono>
 
 using namespace drogon;
 namespace fs = std::filesystem;
 
 static const size_t MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+static const int MAX_FILE_AGE_SECONDS = 15 * 60;     // 15 minutes
+
+/* -------- CLEANUP OLD FILES -------- */
+void cleanupTmp() {
+    auto now = std::chrono::system_clock::now();
+
+    for (const auto& entry : fs::directory_iterator("/tmp")) {
+        if (!entry.is_regular_file()) continue;
+
+        auto ftime = fs::last_write_time(entry);
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(
+            now - ftime
+        ).count();
+
+        if (age > MAX_FILE_AGE_SECONDS) {
+            std::error_code ec;
+            fs::remove(entry.path(), ec);
+        }
+    }
+}
 
 int main() {
     auto& app = drogon::app();
+
+    // Cleanup on startup
+    cleanupTmp();
 
     /* ---------------- HEALTH ---------------- */
     app.registerHandler(
@@ -149,18 +173,17 @@ int main() {
         {Post}
     );
 
-    /* ---------------- DOWNLOAD ---------------- */
+    /* ---------------- DOWNLOAD + DELETE ---------------- */
     app.registerHandler(
         "/download/{id}",
-        [](const HttpRequestPtr& req,
+        [](const HttpRequestPtr&,
            std::function<void(const HttpResponsePtr&)>&& cb,
            std::string id) {
 
             fs::path filePath = fs::path("/tmp") / (id + ".pdf");
 
             if (!fs::exists(filePath)) {
-                auto resp = HttpResponse::newNotFoundResponse();
-                cb(resp);
+                cb(HttpResponse::newNotFoundResponse());
                 return;
             }
 
@@ -170,6 +193,12 @@ int main() {
                 "Content-Disposition",
                 "attachment; filename=\"result.pdf\""
             );
+
+            // Delete file after response is sent
+            resp->setOnCloseCallback([filePath]() {
+                std::error_code ec;
+                fs::remove(filePath, ec);
+            });
 
             cb(resp);
         },
