@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Install ALL required dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Build Drogon from source (stable method)
-RUN git clone --depth=1 https://github.com/drogonframework/drogon.git /tmp/drogon && \
+# Build Drogon with submodules (CRITICAL FIX)
+RUN git clone --recurse-submodules https://github.com/drogonframework/drogon.git /tmp/drogon && \
     cd /tmp/drogon && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release && \
@@ -27,7 +27,7 @@ RUN git clone --depth=1 https://github.com/drogonframework/drogon.git /tmp/drogo
     ldconfig && \
     rm -rf /tmp/drogon
 
-# 3. Build your application
+# Build your app
 WORKDIR /app
 COPY . .
 
