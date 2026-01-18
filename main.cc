@@ -22,7 +22,7 @@ int main() {
         {Get}
     );
 
-    // Upload endpoint
+    // Upload endpoint (VERSION-SAFE)
     app.registerHandler(
         "/upload",
         [](const HttpRequestPtr& req,
@@ -30,22 +30,29 @@ int main() {
 
             Json::Value response;
 
-            if (req->getMethod() != Post ||
-                req->getContentType() != CT_MULTIPART_FORM_DATA) {
+            if (req->getContentType() != CT_MULTIPART_FORM_DATA) {
                 response["error"] = "multipart/form-data required";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            const auto& files = req->getUploadedFiles();
+            const auto& filesMap = req->getFilesMap();
 
-            if (files.empty()) {
+            if (filesMap.empty()) {
                 response["error"] = "No file uploaded";
                 cb(HttpResponse::newHttpJsonResponse(response));
                 return;
             }
 
-            const auto& file = files[0];
+            // Take first uploaded file (field name does not matter)
+            const auto& firstEntry = filesMap.begin()->second;
+            if (firstEntry.empty()) {
+                response["error"] = "Empty file upload";
+                cb(HttpResponse::newHttpJsonResponse(response));
+                return;
+            }
+
+            const auto& file = firstEntry[0];
 
             if (file.fileLength() > MAX_FILE_SIZE) {
                 response["error"] = "File too large (max 10MB)";
